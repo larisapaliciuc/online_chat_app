@@ -1,4 +1,4 @@
-FROM python:3.9-alpine3.13
+FROM python:3.9-slim-buster
 LABEL maintainer="larisa.elena.paliciuc@gmail.com"
 
 # displays output on directly terminal
