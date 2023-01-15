@@ -21,7 +21,12 @@ class UserManager(BaseUserManager):
         if not username:
             raise ValueError('User must have an username.')
 
-        user = self.model(username=username, email=self.normalize_email(email), **extra_fields)
+        user = self.model(
+            username=username,
+            email=self.normalize_email(email),
+            **extra_fields
+            )
+
         user.set_password(password)
         user.save(using=self._db)
 
@@ -34,17 +39,18 @@ class UserManager(BaseUserManager):
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
+        return user
 
-        return user 
 
 class User(AbstractBaseUser, PermissionsMixin):
     """User in the system."""
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
     username = models.CharField(max_length=255, unique=True)
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
