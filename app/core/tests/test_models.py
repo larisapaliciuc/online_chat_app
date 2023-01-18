@@ -1,9 +1,12 @@
 """
 Tests for models.
 """
-
+from django.db import IntegrityError
+from datetime import date
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+
+from core import models
 
 
 class ModelTests(TestCase):
@@ -75,3 +78,161 @@ class ModelTests(TestCase):
         self.assertTrue(user.check_password('admpas'))
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_create_channel_successful(self):
+        """Test creating a channel is successful."""
+
+        creator = get_user_model().objects.create(
+            username='channel_creator',
+            email='test@example.com',
+            password='pas123'
+        )
+
+        channel = models.Channel.objects.create(
+            name='Channel Test',
+            description='Channel description',
+            creator=creator,
+        )
+
+        self.assertEqual(str(channel), channel.name)
+        self.assertEqual(channel.created_date, date.today())
+
+    def test_create_duplicate_channel_name_fails(self):
+        """Tests creating 2 channels with same name fails."""
+
+        creator = get_user_model().objects.create(
+            username='channel_creator',
+            email='test@example.com',
+            password='pas123'
+        )
+
+        models.Channel.objects.create(
+            name='Channel Test',
+            description='Channel description',
+            creator=creator,
+        )
+
+        with self.assertRaises(IntegrityError):
+            models.Channel.objects.create(
+                name='Channel Test',
+                description='Channel description 1',
+                creator=creator,
+            )
+
+    def test_create_membership_successful(self):
+        """Test creating a membership"""
+
+        inviter = get_user_model().objects.create(
+            username='inviter_user',
+            email='inviter@email.com',
+            password='inv123'
+        )
+        member = get_user_model().objects.create(
+            username='member_user',
+            email='member@email.com',
+            password='mem123'
+        )
+        channel = models.Channel.objects.create(
+            creator=inviter,
+            name='Channel Test',
+            description='Description test'
+        )
+        membership = models.Membership.objects.create(
+            inviter=inviter,
+            member=member,
+            channel=channel
+        )
+
+        self.assertEqual(membership.join_date, date.today())
+        self.assertEqual(membership.channel.name, channel.name)
+
+    def test_channel_memberships(self):
+        """Test that a channel can have multiple memberships."""
+
+        inviter = get_user_model().objects.create(
+            username='inviter_user',
+            email='inviter@email.com',
+            password='inv123'
+        )
+        channel = models.Channel.objects.create(
+            creator=inviter,
+            name='Channel Test',
+            description='Description test'
+        )
+        member1 = get_user_model().objects.create(
+            username='member1_user',
+            email='member1@email.com',
+            password='mem123'
+        )
+        member2 = get_user_model().objects.create(
+            username='member2_user',
+            email='member2@email.com',
+            password='mem1234'
+        )
+        models.Membership.objects.create(
+            inviter=inviter,
+            member=member1,
+            channel=channel
+        )
+        models.Membership.objects.create(
+            inviter=inviter,
+            member=member2,
+            channel=channel
+        )
+
+        self.assertEqual(len(channel.members.all()), 2)
+        self.assertTrue(member2 in channel.members.all())
+        self.assertTrue(member1 in channel.members.all())
+
+    def test_default_mermbership_permissions(self):
+        """Tests membership permissions."""
+
+        inviter = get_user_model().objects.create(
+            username='inviter_user',
+            email='inviter@email.com',
+            password='inv123'
+        )
+        channel = models.Channel.objects.create(
+            creator=inviter,
+            name='Channel Test',
+            description='Description test'
+        )
+        member = get_user_model().objects.create(
+            username='member_user',
+            email='member@email.com',
+            password='mem123'
+        )
+        membership = models.Membership.objects.create(
+            inviter=inviter,
+            member=member,
+            channel=channel
+        )
+
+        self.assertEqual(membership.get_permissions_display(), 'Read')
+
+    def test_set_mermbership_permissions_successful(self):
+        """Tests membership permissions are correctly set."""
+
+        inviter = get_user_model().objects.create(
+            username='inviter_user',
+            email='inviter@email.com',
+            password='inv123'
+        )
+        channel = models.Channel.objects.create(
+            creator=inviter,
+            name='Channel Test',
+            description='Description test'
+        )
+        member = get_user_model().objects.create(
+            username='member_user',
+            email='member@email.com',
+            password='mem123'
+        )
+        membership = models.Membership.objects.create(
+            inviter=inviter,
+            member=member,
+            channel=channel,
+            permissions='A'
+        )
+
+        self.assertEqual(membership.get_permissions_display(), 'Admin')

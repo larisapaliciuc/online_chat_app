@@ -2,6 +2,11 @@
 Database models.
 """
 
+
+from django.utils.translation import gettext as _
+
+from django.conf import settings
+
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -54,3 +59,58 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
+
+
+class Channel(models.Model):
+    """Channel object."""
+
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='creator_of'
+    )
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+    created_date = models.DateField(auto_now_add=True)
+    members = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through='Membership',
+        through_fields=('channel', 'member')
+    )
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+
+class Membership(models.Model):
+    """Membership object."""
+
+    READ = 'R'
+    WRITE = 'W'
+    ADMIN = 'A'
+
+    PERMISSIONS_CHOICES = [
+        (READ, _('Read')),
+        (WRITE, _('Write')),
+        (ADMIN, _('Admin'))
+    ]
+
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    inviter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='membership_invites'
+    )
+    channel = models.ForeignKey(
+        Channel,
+        on_delete=models.CASCADE,
+    )
+    permissions = models.CharField(
+        max_length=255,
+        default=READ,
+        choices=PERMISSIONS_CHOICES
+    )
+    join_date = models.DateField(auto_now_add=True)
