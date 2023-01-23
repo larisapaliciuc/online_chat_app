@@ -97,6 +97,28 @@ class ModelTests(TestCase):
         self.assertEqual(str(channel), channel.name)
         self.assertEqual(channel.created_date, date.today())
 
+    def test_create_channel_adds_creator_as_member(self):
+        """Test creating a channel adds the creator as member."""
+
+        creator = get_user_model().objects.create(
+            username='channel_creator',
+            email='test@example.com',
+            password='pas123'
+        )
+
+        channel = models.Channel.objects.create(
+            name='Channel Test',
+            description='Channel description',
+            creator=creator,
+        )
+
+        membership = models.Membership.objects.filter(channel=channel)[0]
+
+        self.assertEqual(str(channel), channel.name)
+        self.assertEqual(membership.permissions, 'A')
+        self.assertTrue(creator in channel.members.all())
+        self.assertEqual(channel.created_date, date.today())
+
     def test_create_duplicate_channel_name_fails(self):
         """Tests creating 2 channels with same name fails."""
 
@@ -180,7 +202,7 @@ class ModelTests(TestCase):
             channel=channel
         )
 
-        self.assertEqual(len(channel.members.all()), 2)
+        self.assertEqual(len(channel.members.all()), 3)
         self.assertTrue(member2 in channel.members.all())
         self.assertTrue(member1 in channel.members.all())
 
@@ -210,7 +232,7 @@ class ModelTests(TestCase):
 
         self.assertEqual(membership.get_permissions_display(), 'Read')
 
-    def test_set_mermbership_permissions_successful(self):
+    def test_set_membership_permissions_successful(self):
         """Tests membership permissions are correctly set."""
 
         inviter = get_user_model().objects.create(
@@ -236,3 +258,28 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(membership.get_permissions_display(), 'Admin')
+
+    def test_message_created_successfully(self):
+        """Test a message is created successfully"""
+
+        sender = get_user_model().objects.create(
+            username='Sender User',
+            email='sender@example.com',
+            password='mypassword'
+        )
+        channel = models.Channel.objects.create(
+            creator=sender,
+            name='Channel',
+            description='My channel'
+        )
+        text = 'Hello! My name is Larisa. 😍'
+
+        message = models.Message.objects.create(
+            sender=sender,
+            channel=channel,
+            text=text
+        )
+
+        self.assertEqual(message.sent_date, date.today())
+        self.assertEqual(message.channel, channel)
+        self.assertEqual(str(message), text)

@@ -78,8 +78,38 @@ class Channel(models.Model):
         through_fields=('channel', 'member')
     )
 
-    def __str__(self) -> str:
+    def __str__(self):
         return str(self.name)
+
+    def save(self, *args, **kwargs):
+        """Override save method to automatically add
+        creator as member of channel at create"""
+
+        super(Channel, self).save(*args, **kwargs)
+
+        if not self.members.all():
+            Membership.objects.create(
+                inviter=self.creator,
+                member=self.creator,
+                channel=self,
+                permissions='A'
+            )
+
+
+class Message(models.Model):
+    """Message object."""
+
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True
+    )
+    channel = models.ForeignKey(Channel, on_delete=models.CASCADE)
+    text = models.TextField(max_length=1024)
+    sent_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.text)
 
 
 class Membership(models.Model):
@@ -102,7 +132,7 @@ class Membership(models.Model):
     inviter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name='membership_invites'
+        related_name='membership_inviter'
     )
     channel = models.ForeignKey(
         Channel,
