@@ -41,7 +41,6 @@ class AuthTokenSerializer(serializers.Serializer):
     """Serializer for the user auth token."""
 
     username = serializers.CharField()
-    email = serializers.EmailField()
     password = serializers.CharField(
         style={'input_type': 'password'},
         trim_whitespace=False,

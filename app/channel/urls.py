@@ -16,4 +16,5 @@ router.register('channels', views.ChannelViewSet)
 app_name = 'channel'
 urlpatterns = [
     path('', include(router.urls)),
+    path('messages/<int:message_id>', views.MessageSerializer)
 ]

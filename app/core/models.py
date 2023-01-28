@@ -2,7 +2,6 @@
 Database models.
 """
 
-
 from django.utils.translation import gettext as _
 
 from django.conf import settings
@@ -92,7 +91,7 @@ class Channel(models.Model):
                 inviter=self.creator,
                 member=self.creator,
                 channel=self,
-                permissions='A'
+                permissions=3
             )
 
 
@@ -115,9 +114,9 @@ class Message(models.Model):
 class Membership(models.Model):
     """Membership object."""
 
-    READ = 'R'
-    WRITE = 'W'
-    ADMIN = 'A'
+    READ = 1
+    WRITE = 2
+    ADMIN = 3
 
     PERMISSIONS_CHOICES = [
         (READ, _('Read')),
@@ -138,8 +137,7 @@ class Membership(models.Model):
         Channel,
         on_delete=models.CASCADE,
     )
-    permissions = models.CharField(
-        max_length=255,
+    permissions = models.IntegerField(
         default=READ,
         choices=PERMISSIONS_CHOICES
     )

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'user',
     'channel',
+    'message',
 ]
 
 MIDDLEWARE = [
@@ -140,4 +141,6 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
 }
 
-DATE_INPUT_FORMATS = ['%d-%m-%Y']
+DATETIME_FORMAT = ['%d-%m-%Y %H:%M:%S.%f']
+
+

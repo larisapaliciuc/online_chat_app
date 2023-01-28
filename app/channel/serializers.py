@@ -1,9 +1,8 @@
 """Serializers for channels API.
 """
 
-from rest_framework import serializers
-
 from core.models import Channel
+from rest_framework import serializers
 
 
 class ChannelSerializer(serializers.ModelSerializer):
@@ -11,5 +10,5 @@ class ChannelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Channel
-        fields = ['id', 'name', 'creator', 'description']
-        read_only_fields = ['id', 'creator']
+        fields = ['id', 'name', 'description']
+        read_only_fields = ['id']

@@ -115,7 +115,7 @@ class ModelTests(TestCase):
         membership = models.Membership.objects.filter(channel=channel)[0]
 
         self.assertEqual(str(channel), channel.name)
-        self.assertEqual(membership.permissions, 'A')
+        self.assertEqual(membership.permissions, 3)
         self.assertTrue(creator in channel.members.all())
         self.assertEqual(channel.created_date, date.today())
 
@@ -254,7 +254,7 @@ class ModelTests(TestCase):
             inviter=inviter,
             member=member,
             channel=channel,
-            permissions='A'
+            permissions=3
         )
 
         self.assertEqual(membership.get_permissions_display(), 'Admin')

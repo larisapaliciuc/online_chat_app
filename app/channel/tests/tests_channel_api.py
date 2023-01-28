@@ -11,11 +11,16 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Channel
+from core.models import (
+    Channel,
+    Message,
+)
 
 from channel.serializers import ChannelSerializer
 
 CHANNELS_URL = reverse('channel:channel-list')
+MESS_URL = 'channel:channel-messages'
+PATCH_MSG_URL = 'channel:channel-patch-messages'
 
 
 def create_channel(creator, **params):
@@ -200,7 +205,7 @@ class PrivateChannelsAPITests(TestCase):
         self.assertFalse(Channel.objects.filter(id=channel.id).exists())
 
     def test_delete_channel_other_users_channel_error(self):
-        """Test trying to delete another susrs recipe returns error."""
+        """Test trying to delete another user's channel returns error."""
 
         new_user = create_user(
             username='User2',
@@ -219,3 +224,88 @@ class PrivateChannelsAPITests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Channel.objects.filter(id=channel.id).exists())
+
+    def test_list_channel_messages_successful(self):
+        """Test listing messages of a channel is successful."""
+
+        channel = Channel.objects.create(
+            creator=self.user,
+            name='Channel',
+            description='My channel'
+        )
+        text = 'Hello! My name is Larisa. 😍'
+
+        message = Message.objects.create(
+            sender=self.user,
+            channel=channel,
+            text=text
+        )
+
+        res = self.client.get(reverse(MESS_URL, args=[channel.id]))
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(message.sender, self.user)
+        self.assertEqual(len(res.data), 1)
+
+    def test_update_your_message_channel(self):
+        """Test updating your message from a channel."""
+
+        payload = {'text': 'Hello! My name also includes Paliciuc.'}
+
+        channel = Channel.objects.create(
+            creator=self.user,
+            name='Channel',
+            description='My channel'
+        )
+
+        message = Message.objects.create(
+            sender=self.user,
+            channel=channel,
+            text='Hello! My name is Larisa. 😍'
+        )
+
+        url = reverse(
+            PATCH_MSG_URL,
+            kwargs={
+                'message_id': message.id,
+                'pk': channel.id
+                }
+            )
+
+        res = self.client.patch(url, payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        message.refresh_from_db()
+        self.assertEqual(message.text, payload['text'])
+
+    def test_update_somebody_else_message_channel(self):
+        """Test updating a message from a channel not sent by you."""
+
+        payload = {'text': 'Hello! My name also includes Paliciuc.'}
+
+        sender = get_user_model().objects.create(
+            username='Sender User',
+            email='sender@example.com',
+            password='mypassword'
+        )
+        channel = Channel.objects.create(
+            creator=sender,
+            name='Channel',
+            description='My channel'
+        )
+
+        message = Message.objects.create(
+            sender=sender,
+            channel=channel,
+            text='Hello! My name is Larisa. 😍'
+        )
+
+        url = reverse(
+            PATCH_MSG_URL,
+            kwargs={
+                'message_id': message.id,
+                'pk': channel.id
+                }
+            )
+
+        res = self.client.patch(url, payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
